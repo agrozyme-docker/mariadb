@@ -1,13 +1,13 @@
 FROM agrozyme/alpine:3.8
 COPY docker/ /docker/
 
-RUN set -ex \
-  && chmod +x /docker/*.sh \
-  && apk add --no-cache mariadb mariadb-client \
-  && mkdir -p /run/mysqld /var/log/mysql /usr/local/etc/mysql /var/lib/mysql \
-  && chown -R mysql:mysql /run/mysqld /var/lib/mysql \
-  && ln -sf /dev/stderr /var/log/mysql/error.log \
-  && sed -ri \
+RUN set -ex && \
+  chmod +x /docker/*.sh && \
+  apk add --no-cache mariadb mariadb-client && \
+  mkdir -p /run/mysqld /var/log/mysql /usr/local/etc/mysql /var/lib/mysql && \
+  chown -R mysql:mysql /run/mysqld /var/lib/mysql && \
+  ln -sf /dev/stderr /var/log/mysql/error.log && \
+  sed -ri \
   -e '/^\[client\]$/a default-character-set = utf8mb4' \
   -e '/^\[mysql\]$/a default-character-set = utf8mb4' \
   -e '/^\[mysqld\]$/a character-set-client-handshake = FALSE' \

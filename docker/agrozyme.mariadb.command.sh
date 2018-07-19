@@ -40,7 +40,8 @@ function build_statement() {
   local statement
 
   if [ -n "${database}" -a "*" != "${database}" ]; then
-    statement+=$(cat <<-SQL
+    statement+=$(
+      cat <<- SQL
 
       CREATE DATABASE IF NOT EXISTS ${database};
 SQL
@@ -48,7 +49,8 @@ SQL
   fi
 
   if [ "${user}" -a "${database}" ]; then
-    statement+=$(cat <<-SQL
+    statement+=$(
+      cat <<- SQL
 
       CREATE USER IF NOT EXISTS ${account} IDENTIFIED BY '${password}';
       ALTER USER ${account} IDENTIFIED BY '${password}';
@@ -82,14 +84,15 @@ function main() {
 
   local install=$(install_database)
 
-  if [ -z "${install}" -a -z "${MYSQL_RESET}" ]; then
+  if [ -z "${install}" -a "${MYSQL_RESET}" != "YES" ]; then
     return
   fi
 
   start_database
 
   local statement
-  statement+=$(cat <<-SQL
+  statement+=$(
+    cat <<- SQL
 
     SET @@SESSION.SQL_LOG_BIN=0;
     FLUSH PRIVILEGES;
@@ -109,14 +112,14 @@ SQL
   )
 
   statement+=$(build_statement "$(declare -p items)")
-  statement+=$(cat <<-SQL
+  statement+=$(
+    cat <<- SQL
 
     FLUSH PRIVILEGES;
 SQL
   )
 
   execute_statement "${statement}"
-  mysqlcheck --user=root --password="${MYSQL_ROOT_PASSWORD}" --auto-repair --optimize --all-databases
   mysqladmin --user=root --password="${MYSQL_ROOT_PASSWORD}" shutdown
 }
 
