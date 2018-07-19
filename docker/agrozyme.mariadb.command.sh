@@ -20,8 +20,7 @@ function start_database() {
     sleep 1
   done
 
-  if [ "$count" = 0 ]; then
-    echo 'MySQL init process failed.'
+  if [ "${count}" = 0 ]; then
     echo >&2 'MySQL init process failed.'
     exit 1
   fi
