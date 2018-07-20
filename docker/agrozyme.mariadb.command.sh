@@ -99,6 +99,9 @@ function install_database() {
 }
 
 function startup_database() {
+  declare -A mysql
+  eval "mysql=${1#*=}"
+
   mysqld_safe --nowatch --skip-grant-tables
   local count=""
 
@@ -132,7 +135,7 @@ function main() {
   local install=$(install_database)
 
   if [[ -n "${install}" ]] || [[ "YES" == "${mysql['RESET']}" ]]; then
-    startup_database
+    startup_database "$(declare -p mysql)"
   fi
 
   rm -f /run/mysqld/mysqld.pid
