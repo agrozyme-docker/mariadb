@@ -13,7 +13,6 @@ function start_database() {
   local count
 
   for count in {30..0}; do
-    # if execute_statement 'SELECT 1' &> /dev/null; then
     if mysqladmin --protocol=socket --user=root ping &> /dev/null; then
       break
     fi
@@ -21,7 +20,7 @@ function start_database() {
     sleep 1
   done
 
-  if [[ 0 == "${count}" ]]; then
+  if [[ 0 == ${count} ]]; then
     echo >&2 'MySQL init process failed.'
     exit 1
   fi
@@ -137,8 +136,7 @@ function main() {
   start_database
   local statement=$(build_startup_statement "$(declare -p mysql)")
   execute_statement "${statement}"
-  # mysqladmin --user=root --password="${mysql['ROOT_PASSWORD']}" shutdown
-  mysqladmin --protocol=socket --user=root shutdown
+  mysqladmin --user=root --password="${mysql['ROOT_PASSWORD']}" shutdown
   rm -f /run/mysqld/mysqld.pid
   exec mysqld_safe
 }
