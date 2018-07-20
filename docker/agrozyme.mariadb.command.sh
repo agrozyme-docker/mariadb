@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 function execute_statement() {
   local statement=${1}
@@ -117,8 +118,6 @@ function install_database() {
 }
 
 function main() {
-  set -ex
-
   declare -A mysql=(
     ['ROOT_PASSWORD']=${MYSQL_ROOT_PASSWORD}
     ['DATABASE']=${MYSQL_DATABASE}
