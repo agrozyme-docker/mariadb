@@ -95,7 +95,7 @@ function install_database() {
 
   mkdir -p "${data}"
   chown -R mysql:mysql "${data}"
-  mysql_install_db --user=mysql --rpm
+  mysql_install_db --user=mysql
 }
 
 function startup_database() {
@@ -117,7 +117,6 @@ function startup_database() {
 
   local statement=$(build_startup_statement "$(declare -p mysql)")
   execute_statement "${statement}"
-  mysqlcheck --user=root --password="${mysql['ROOT_PASSWORD']}" --auto-repair --optimize --all-databases --silent
   mysqladmin --user=root --password="${mysql['ROOT_PASSWORD']}" shutdown
 }
 
