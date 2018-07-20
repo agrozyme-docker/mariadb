@@ -3,7 +3,7 @@
 function execute_statement() {
   local statement=${1}
 
-  if [ -n "${statement}" ]; then
+  if [[ -n "${statement}" ]]; then
     mysql --protocol=socket --user=root -e "${statement}"
   fi
 }
@@ -13,20 +13,21 @@ function start_database() {
   local count
 
   for count in {30..0}; do
-    if execute_statement 'SELECT 1' &> /dev/null; then
+    # if execute_statement 'SELECT 1' &> /dev/null; then
+    if mysqladmin --protocol=socket --user=root ping &> /dev/null; then
       break
     fi
     echo 'MySQL init process in progress...'
     sleep 1
   done
 
-  if [ "${count}" = 0 ]; then
+  if [[ 0 == "${count}" ]]; then
     echo >&2 'MySQL init process failed.'
     exit 1
   fi
 }
 
-function build_statement() {
+function build_clause_statement() {
   declare -A items
   eval "items=${1#*=}"
 
@@ -38,7 +39,7 @@ function build_statement() {
   local account="'${items[user]}'@'${items[host]}'"
   local statement
 
-  if [ -n "${database}" -a "*" != "${database}" ]; then
+  if [[ -n "${database}" ]] && [[ "*" != "${database}" ]]; then
     statement+=$(
       cat <<- SQL
 
@@ -47,7 +48,7 @@ SQL
     )
   fi
 
-  if [ "${user}" -a "${database}" ]; then
+  if [[ -n "${user}" ]] && [[ -n "${database}" ]]; then
     statement+=$(
       cat <<- SQL
 
@@ -61,33 +62,9 @@ SQL
   echo "${statement}"
 }
 
-function install_database() {
-  local data=/var/lib/mysql
-
-  if [ -d "${data}/mysql" ]; then
-    return
-  fi
-
-  mkdir -p "${data}"
-  chown -R mysql:mysql "${data}"
-  mysql_install_db --user=mysql
-}
-
-function main() {
-  declare -A items=(
-    ['user']=root
-    ['password']=${MYSQL_ROOT_PASSWORD}
-    ['host']=localhost
-    ['database']=*
-  )
-
-  local install=$(install_database)
-
-  if [ -z "${install}" -a "${MYSQL_RESET}" != "YES" ]; then
-    return
-  fi
-
-  start_database
+function build_startup_statement() {
+  declare -A mysql
+  eval "mysql=${1#*=}"
 
   local statement
   statement+=$(
@@ -99,18 +76,25 @@ function main() {
 SQL
   )
 
-  statement+=$(build_statement "$(declare -p items)")
-  items['host']=%
-  statement+=$(build_statement "$(declare -p items)")
-
-  items+=(
-    ['user']=${MYSQL_USER}
-    ['password']=${MYSQL_PASSWORD}
-    ['host']=%
-    ['database']=${MYSQL_DATABASE}
+  declare -A items=(
+    ['user']=root
+    ['password']=${mysql['ROOT_PASSWORD']}
+    ['host']=localhost
+    ['database']=*
   )
 
-  statement+=$(build_statement "$(declare -p items)")
+  statement+=$(build_clause_statement "$(declare -p items)")
+  items['host']=%
+  statement+=$(build_clause_statement "$(declare -p items)")
+
+  items+=(
+    ['user']=${mysql['USER']}
+    ['password']=${mysql['PASSWORD']}
+    ['host']=%
+    ['database']=${mysql['DATABASE']}
+  )
+
+  statement+=$(build_clause_statement "$(declare -p items)")
   statement+=$(
     cat <<- SQL
 
@@ -118,11 +102,45 @@ SQL
 SQL
   )
 
-  execute_statement "${statement}"
-  mysqladmin --user=root --password="${MYSQL_ROOT_PASSWORD}" shutdown
+  echo "$statement"
 }
 
-set -ex
-main
-rm -f /run/mysqld/mysqld.pid
-exec mysqld_safe
+function install_database() {
+  local data=/var/lib/mysql
+
+  if [[ -d "${data}/mysql" ]]; then
+    return
+  fi
+
+  mkdir -p "${data}"
+  chown -R mysql:mysql "${data}"
+  mysql_install_db --user=mysql
+}
+
+function main() {
+  set -ex
+
+  declare -A mysql=(
+    ['ROOT_PASSWORD']=${MYSQL_ROOT_PASSWORD}
+    ['DATABASE']=${MYSQL_DATABASE}
+    ['USER']=${MYSQL_USER}
+    ['PASSWORD']=${MYSQL_PASSWORD}
+    ['RESET']=${MYSQL_RESET}
+  )
+
+  local install=$(install_database)
+
+  if [[ -z "${install}" ]] && [[ "YES" != "${mysql['RESET']}" ]]; then
+    return
+  fi
+
+  start_database
+  local statement=$(build_startup_statement "$(declare -p mysql)")
+  execute_statement "${statement}"
+  # mysqladmin --user=root --password="${mysql['ROOT_PASSWORD']}" shutdown
+  mysqladmin --protocol=socket --user=root shutdown
+  rm -f /run/mysqld/mysqld.pid
+  exec mysqld_safe
+}
+
+main "$@"
