@@ -5,13 +5,13 @@ function execute_statement() {
   local statement=${1}
 
   if [[ -n "${statement}" ]]; then
-    mysql --protocol=socket --user=root -e "${statement}"
+    mysql --protocol=socket --user=root --init-command="SET @@SESSION.SQL_LOG_BIN=0;" -e "${statement}"
   fi
 }
 
 function start_database() {
   mysqld_safe --nowatch --skip-grant-tables
-  local count
+  local count=""
 
   for count in {30..0}; do
     if mysqladmin --protocol=socket --user=root ping &> /dev/null; then
@@ -37,7 +37,7 @@ function build_clause_statement() {
   local database=${items['database']}
 
   local account="'${items[user]}'@'${items[host]}'"
-  local statement
+  local statement=""
 
   if [[ -n "${database}" ]] && [[ "*" != "${database}" ]]; then
     statement+=$(
@@ -66,11 +66,10 @@ function build_startup_statement() {
   declare -A mysql
   eval "mysql=${1#*=}"
 
-  local statement
+  local statement=""
   statement+=$(
     cat <<- SQL
 
-    SET @@SESSION.SQL_LOG_BIN=0;
     FLUSH PRIVILEGES;
     DELETE FROM mysql.user WHERE user IN ('') OR host NOT IN ('localhost', '%');
 SQL
@@ -114,16 +113,16 @@ function install_database() {
 
   mkdir -p "${data}"
   chown -R mysql:mysql "${data}"
-  mysql_install_db --user=mysql
+  mysql_install_db --user=mysql --rpm
 }
 
 function main() {
   declare -A mysql=(
-    ['ROOT_PASSWORD']=${MYSQL_ROOT_PASSWORD}
-    ['DATABASE']=${MYSQL_DATABASE}
-    ['USER']=${MYSQL_USER}
-    ['PASSWORD']=${MYSQL_PASSWORD}
-    ['RESET']=${MYSQL_RESET}
+    ['ROOT_PASSWORD']=${MYSQL_ROOT_PASSWORD:-}
+    ['DATABASE']=${MYSQL_DATABASE:-}
+    ['USER']=${MYSQL_USER:-}
+    ['PASSWORD']=${MYSQL_PASSWORD:-}
+    ['RESET']=${MYSQL_RESET:-}
   )
 
   local install=$(install_database)
@@ -135,6 +134,7 @@ function main() {
   start_database
   local statement=$(build_startup_statement "$(declare -p mysql)")
   execute_statement "${statement}"
+  # mysqlcheck --user=root --password="${mysql['ROOT_PASSWORD']}" --auto-repair --optimize --all-databases --silent
   mysqladmin --user=root --password="${mysql['ROOT_PASSWORD']}" shutdown
   rm -f /run/mysqld/mysqld.pid
   exec mysqld_safe
