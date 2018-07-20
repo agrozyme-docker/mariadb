@@ -134,7 +134,7 @@ function main() {
   start_database
   local statement=$(build_startup_statement "$(declare -p mysql)")
   execute_statement "${statement}"
-  # mysqlcheck --user=root --password="${mysql['ROOT_PASSWORD']}" --auto-repair --optimize --all-databases --silent
+  mysqlcheck --user=root --password="${mysql['ROOT_PASSWORD']}" --auto-repair --optimize --all-databases --silent
   mysqladmin --user=root --password="${mysql['ROOT_PASSWORD']}" shutdown
   rm -f /run/mysqld/mysqld.pid
   exec mysqld_safe
