@@ -9,24 +9,6 @@ function execute_statement() {
   fi
 }
 
-function start_database() {
-  mysqld_safe --nowatch --skip-grant-tables
-  local count=""
-
-  for count in {30..0}; do
-    if mysqladmin --protocol=socket --user=root ping &> /dev/null; then
-      break
-    fi
-    echo 'MySQL init process in progress...'
-    sleep 1
-  done
-
-  if [[ 0 == ${count} ]]; then
-    echo >&2 'MySQL init process failed.'
-    exit 1
-  fi
-}
-
 function build_clause_statement() {
   declare -A items
   eval "items=${1#*=}"
@@ -116,6 +98,29 @@ function install_database() {
   mysql_install_db --user=mysql --rpm
 }
 
+function startup_database() {
+  mysqld_safe --nowatch --skip-grant-tables
+  local count=""
+
+  for count in {30..0}; do
+    if mysqladmin --protocol=socket --user=root ping &> /dev/null; then
+      break
+    fi
+    echo 'MySQL init process in progress...'
+    sleep 1
+  done
+
+  if [[ 0 == ${count} ]]; then
+    echo >&2 'MySQL init process failed.'
+    exit 1
+  fi
+
+  local statement=$(build_startup_statement "$(declare -p mysql)")
+  execute_statement "${statement}"
+  mysqlcheck --user=root --password="${mysql['ROOT_PASSWORD']}" --auto-repair --optimize --all-databases --silent
+  mysqladmin --user=root --password="${mysql['ROOT_PASSWORD']}" shutdown
+}
+
 function main() {
   declare -A mysql=(
     ['ROOT_PASSWORD']=${MYSQL_ROOT_PASSWORD:-}
@@ -127,15 +132,10 @@ function main() {
 
   local install=$(install_database)
 
-  if [[ -z "${install}" ]] && [[ "YES" != "${mysql['RESET']}" ]]; then
-    return
+  if [[ -n "${install}" ]] || [[ "YES" == "${mysql['RESET']}" ]]; then
+    startup_database
   fi
 
-  start_database
-  local statement=$(build_startup_statement "$(declare -p mysql)")
-  execute_statement "${statement}"
-  mysqlcheck --user=root --password="${mysql['ROOT_PASSWORD']}" --auto-repair --optimize --all-databases --silent
-  mysqladmin --user=root --password="${mysql['ROOT_PASSWORD']}" shutdown
   rm -f /run/mysqld/mysqld.pid
   exec mysqld_safe
 }
