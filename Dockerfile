@@ -1,7 +1,7 @@
 FROM agrozyme/alpine:3.8
 COPY docker/ /docker/
 
-RUN set -ex \
+RUN set -euxo pipefail \
   && chmod +x /docker/*.sh \
   && apk add --no-cache mariadb mariadb-client \
   && mkdir -p /run/mysqld /var/log/mysql /usr/local/etc/mysql /var/lib/mysql \
