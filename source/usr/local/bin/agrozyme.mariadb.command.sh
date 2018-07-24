@@ -94,11 +94,11 @@ function install_database() {
   fi
 
   mkdir -p "${data}"
-  chown -R mysql:mysql "${data}"
-  mysql_install_db --user=mysql
+  chown -R core:core "${data}"
+  mysql_install_db
 }
 
-function startup_database() {
+function setup_database() {
   declare -A mysql
   eval "mysql=${1#*=}"
 
@@ -124,6 +124,8 @@ function startup_database() {
 }
 
 function main() {
+  docker-core.sh
+
   declare -A mysql=(
     ['ROOT_PASSWORD']=${MYSQL_ROOT_PASSWORD:-}
     ['DATABASE']=${MYSQL_DATABASE:-}
@@ -135,7 +137,7 @@ function main() {
   local install=$(install_database)
 
   if [[ -n "${install}" ]] || [[ "YES" == "${mysql['RESET']}" ]]; then
-    startup_database "$(declare -p mysql)"
+    setup_database "$(declare -p mysql)"
   fi
 
   rm -f /run/mysqld/mysqld.pid

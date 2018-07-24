@@ -1,11 +1,11 @@
 FROM agrozyme/alpine:3.8
-COPY docker/ /docker/
+COPY source /
 
 RUN set -euxo pipefail \
-  && chmod +x /docker/*.sh \
+  && chmod +x /usr/local/bin/*.sh \
   && apk add --no-cache mariadb mariadb-client \
   && mkdir -p /run/mysqld /var/log/mysql /usr/local/etc/mysql /var/lib/mysql \
-  && chown -R mysql:mysql /run/mysqld /var/lib/mysql \
+  && chown -R core:core /run/mysqld /var/lib/mysql \
   && ln -sf /dev/stderr /var/log/mysql/error.log \
   && sed -ri \
     -e '/^\[client\]$/a default-character-set = utf8mb4' \
@@ -17,8 +17,9 @@ RUN set -euxo pipefail \
     -e '/^\[mysqld\]$/a log-error = /var/log/mysql/error.log' \
     -e '/^\[mysqld\]$/a skip-name-resolve' \
     -e '/^\[mysqld\]$/a skip-host-cache' \
+    -e '/^\[mysqld\]$/a user=core' \
     -e '$ a !includedir /usr/local/etc/mysql/' \
     /etc/mysql/my.cnf
 
 EXPOSE 3306
-CMD ["/docker/agrozyme.mariadb.command.sh"]
+CMD ["agrozyme.mariadb.command.sh"]
