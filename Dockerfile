@@ -14,10 +14,10 @@ RUN set -euxo pipefail \
     -e '/^\[mysqld\]$/a collation_server = utf8mb4_general_ci' \
     -e '/^\[mysqld\]$/a character_set_server = utf8mb4' \
     -e '/^\[mysqld\]$/a init_connect = "SET NAMES utf8mb4" ' \
+    -e '/^\[mysqld\]$/a user = core' \
     -e '/^\[mysqld\]$/a log-error = /var/log/mysql/error.log' \
     -e '/^\[mysqld\]$/a skip-name-resolve' \
     -e '/^\[mysqld\]$/a skip-host-cache' \
-    -e '/^\[mysqld\]$/a user=core' \
     -e '$ a !includedir /usr/local/etc/mysql/' \
     /etc/mysql/my.cnf
 
