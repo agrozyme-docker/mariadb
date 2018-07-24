@@ -8,18 +8,19 @@ RUN set -euxo pipefail \
   && chown -R core:core /run/mysqld /var/lib/mysql \
   && ln -sf /dev/stderr /var/log/mysql/error.log \
   && sed -ri \
-    -e '/^\[client\]$/a default-character-set = utf8mb4' \
-    -e '/^\[mysql\]$/a default-character-set = utf8mb4' \
-    -e '/^\[mysqld\]$/a character-set-client-handshake = FALSE' \
-    -e '/^\[mysqld\]$/a collation_server = utf8mb4_general_ci' \
-    -e '/^\[mysqld\]$/a character_set_server = utf8mb4' \
-    -e '/^\[mysqld\]$/a init_connect = "SET NAMES utf8mb4" ' \
-    -e '/^\[mysqld\]$/a user = core' \
-    -e '/^\[mysqld\]$/a log-error = /var/log/mysql/error.log' \
-    -e '/^\[mysqld\]$/a skip-name-resolve' \
-    -e '/^\[mysqld\]$/a skip-host-cache' \
-    -e '$ a !includedir /usr/local/etc/mysql/' \
-    /etc/mysql/my.cnf
+  -e 's/^[#[:space:]]*innodb_buffer_pool_size[[:space:]]*=.*$/innodb_buffer_pool_size = 16M/i' \
+  -e '/^\[client\]$/a default-character-set = utf8mb4' \
+  -e '/^\[mysql\]$/a default-character-set = utf8mb4' \
+  -e '/^\[mysqld\]$/a character-set-client-handshake = FALSE' \
+  -e '/^\[mysqld\]$/a collation_server = utf8mb4_general_ci' \
+  -e '/^\[mysqld\]$/a character_set_server = utf8mb4' \
+  -e '/^\[mysqld\]$/a init_connect = "SET NAMES utf8mb4" ' \
+  -e '/^\[mysqld\]$/a user = core' \
+  -e '/^\[mysqld\]$/a log-error = /var/log/mysql/error.log' \
+  -e '/^\[mysqld\]$/a skip-name-resolve' \
+  -e '/^\[mysqld\]$/a skip-host-cache' \  
+  -e '$ a !includedir /usr/local/etc/mysql/' \
+  /etc/mysql/my.cnf
 
 EXPOSE 3306
 CMD ["agrozyme.mariadb.command.sh"]
