@@ -8,7 +8,7 @@ RUN set -euxo pipefail \
   && chown -R core:core /run/mysqld /var/lib/mysql \
   && ln -sf /dev/stderr /var/log/mysql/error.log \
   && sed -ri \
-  -e 's/^[#[:space:]]*innodb_buffer_pool_size[[:space:]]*=.*$/innodb_buffer_pool_size = 16M/i' \
+  -e 's/^[#[:space:]]*(innodb_buffer_pool_size)[[:space:]]*=.*$/\1 = 16M/i' \
   -e '/^\[client\]$/a default-character-set = utf8mb4' \
   -e '/^\[mysql\]$/a default-character-set = utf8mb4' \
   -e '/^\[mysqld\]$/a character-set-client-handshake = FALSE' \
