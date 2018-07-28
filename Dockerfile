@@ -4,7 +4,7 @@ COPY source /
 RUN set -euxo pipefail \
   && chmod +x /usr/local/bin/*.sh \
   && apk add --no-cache mariadb mariadb-client \
-  && mkdir -p /run/mysqld /var/log/mysql /usr/local/etc/mysql /var/lib/mysql \
+  && mkdir -p /var/log/mysql /usr/local/etc/mysql \
   && ln -sf /dev/stderr /var/log/mysql/error.log \
   && sed -ri \
   -e 's/^[#[:space:]]*(innodb_buffer_pool_size)[[:space:]]*=.*$/\1 = 16M/i' \
