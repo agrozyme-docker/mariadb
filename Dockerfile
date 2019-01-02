@@ -17,7 +17,7 @@ RUN set -euxo pipefail \
   -e '/^\[mysqld\]$/a user = core' \
   -e '/^\[mysqld\]$/a log-error = /var/log/mysql/error.log' \
   -e '/^\[mysqld\]$/a skip-name-resolve' \
-  -e '/^\[mysqld\]$/a skip-host-cache' \  
+  -e '/^\[mysqld\]$/a skip-host-cache' \
   -e '$ a !includedir /usr/local/etc/mysql/' \
   /etc/mysql/my.cnf
 

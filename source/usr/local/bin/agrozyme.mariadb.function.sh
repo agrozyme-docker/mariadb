@@ -2,7 +2,7 @@
 set -euo pipefail
 
 function execute_statement() {
-  local statement=${1}
+  local statement="${1:-}"
 
   if [[ -n "${statement}" ]]; then
     mysql --protocol=socket --user=root --init-command="SET @@SESSION.SQL_LOG_BIN=0;" -e "${statement}"
@@ -45,9 +45,6 @@ SQL
 }
 
 function build_startup_statement() {
-  declare -A mysql
-  eval "mysql=${1#*=}"
-
   local statement=""
   statement+=$(
     cat <<- SQL
@@ -59,7 +56,7 @@ SQL
 
   declare -A items=(
     ['user']=root
-    ['password']=${mysql['ROOT_PASSWORD']}
+    ['password']=${MYSQL_ROOT_PASSWORD:-}
     ['host']=localhost
     ['database']=*
   )
@@ -69,10 +66,10 @@ SQL
   statement+=$(build_clause_statement "$(declare -p items)")
 
   items+=(
-    ['user']=${mysql['USER']}
-    ['password']=${mysql['PASSWORD']}
+    ['user']=${MYSQL_USER:-}
+    ['password']=${MYSQL_PASSWORD:-}
     ['host']=%
-    ['database']=${mysql['DATABASE']}
+    ['database']=${MYSQL_DATABASE:-}
   )
 
   statement+=$(build_clause_statement "$(declare -p items)")
@@ -92,48 +89,36 @@ function install_database() {
   chown -R core:core "${data}" /run/mysqld
 
   if [[ ! -d "${data}/mysql" ]]; then
-    mysql_install_db
+    mysql_install_db --user=core
   fi
 }
 
 function setup_database() {
-  declare -A mysql
-  eval "mysql=${1#*=}"
-
-  mysqld_safe --no-watch --skip-grant-tables
-  local count=""
+  local count
+  mysqld_safe --no-auto-restart --skip-networking --skip-grant-tables --user=core
 
   for count in {30..0}; do
     if mysqladmin --protocol=socket --user=root ping &> /dev/null; then
       break
     fi
+
     echo 'MySQL init process in progress...'
     sleep 1
   done
 
-  if [[ 0 == ${count} ]]; then
+  if [[ 0 -eq ${count} ]]; then
     echo >&2 'MySQL init process failed.'
     exit 1
   fi
 
-  local statement=$(build_startup_statement "$(declare -p mysql)")
+  local statement=$(build_startup_statement)
   execute_statement "${statement}"
-  mysqladmin --user=root --password="${mysql['ROOT_PASSWORD']}" shutdown
+  mysqladmin --user=root --password="${MYSQL_ROOT_PASSWORD:-}" shutdown
 }
 
 function main() {
-  declare -A mysql=(
-    ['ROOT_PASSWORD']=${MYSQL_ROOT_PASSWORD:-}
-    ['DATABASE']=${MYSQL_DATABASE:-}
-    ['USER']=${MYSQL_USER:-}
-    ['PASSWORD']=${MYSQL_PASSWORD:-}
-    ['RESET']=${MYSQL_RESET:-}
-  )
-
-  local install=$(install_database)
-
-  if [[ -n "${install}" ]] || [[ "YES" == "${mysql['RESET']}" ]]; then
-    setup_database "$(declare -p mysql)"
+  if [[ -n $(install_database) ]] || [[ "YES" == "${MYSQL_RESET:-}" ]]; then
+    setup_database
   fi
 }
 
