@@ -1,9 +1,10 @@
+# Summary
 MariaDB is a community-developed fork of MySQL intended to remain free under the GNU GPL.
 
-# Settings:
-  - Port: 3306
-  - Datadir: /var/lib/mysql
-  - Log Path: /var/log/mysql
+# Settings
+- Port: 3306
+- Datadir: /var/lib/mysql
+- Log Path: /var/log/mysql
 
 # Environment Variables
 When you start the image, you can adjust the configuration of the instance by passing one or more environment variables on the docker run command line.
