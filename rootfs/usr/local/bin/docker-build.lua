@@ -1,10 +1,9 @@
 #!/usr/bin/lua
 local core = require("docker-core")
 
-local function update_setting()
-  local pcre = require("rex_pcre")
-  local file = "/etc/mysql/my.cnf"
-  local text = core.read_file(file)
+local function update_setting(target, items)
+  local pcre = items.pcre
+  local text = core.read_file(target)
   local mysqld_setting = {
     "character-set-client-handshake = FALSE",
     "collation_server = utf8mb4_general_ci",
@@ -19,16 +18,14 @@ local function update_setting()
   text = pcre.gsub(text, [[^[\s]*(\[client\][#\s]*)$]], "%1 \n" .. "default-character-set = utf8mb4", nil, "im")
   text = pcre.gsub(text, [[^[\s]*(\[mysql\][#\s]*)$]], "%1 \n" .. "default-character-set = utf8mb4", nil, "im")
   text = pcre.gsub(text, [[^[\s]*(\[mysqld\][#\s]*)$]], "%1 \n" .. table.concat(mysqld_setting, "\n"), nil, "im")
-  core.write_file(file, text)
-  core.append_file(file, "!includedir /usr/local/etc/mysql/ \n")
+  core.write_file(target, text)
+  core.append_file(target, "!includedir /usr/local/etc/mysql/ \n")
 end
 
 local function replace_setting()
-  if (core.has_modules("rex_pcre")) then
-    update_setting()
-  else
-    core.replace_files("/etc/mysql/my.cnf")
-  end
+  local requires = {pcre = "rex_pcre"}
+  local updates = {["/etc/mysql/my.cnf"] = update_setting}
+  core.replace_files(requires, updates)
 end
 
 local function main()
