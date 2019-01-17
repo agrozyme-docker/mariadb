@@ -1,0 +1,16 @@
+[client]
+default-character-set = utf8mb4
+
+[mysql]
+default-character-set = utf8mb4
+
+[mysqld]
+user = core
+character-set-client-handshake = FALSE
+collation_server = utf8mb4_general_ci
+character_set_server = utf8mb4
+init_connect = "SET NAMES utf8mb4"
+log-error = /var/log/mysql/error.log
+skip-name-resolve
+skip-host-cache
+innodb_buffer_pool_size = 16M
