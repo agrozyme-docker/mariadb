@@ -46,11 +46,11 @@ end
 
 local function setup_database(user)
   local count = 30
+  local command = string.format("mysqladmin --protocol=socket --user=%s ping", user.client)
   core.run("mysqld_safe --user=%s --no-auto-restart --skip-networking --skip-grant-tables", user.server)
 
   while (0 < count) do
     os.execute("sleep 1")
-    local command = string.format("mysqladmin --protocol=socket --user=%s ping", user.client)
 
     if (os.execute(command)) then
       break
