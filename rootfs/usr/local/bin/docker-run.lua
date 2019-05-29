@@ -86,7 +86,7 @@ local function install_database(user)
   core.mkdir(data)
 
   if (core.test("! -d %s/mysql", data)) then
-    return core.run("mysql_install_db --user=%s", user.server)
+    return core.run("mysql_install_db --user=%s --datadir=%s", user.server, data)
   else
     return true
   end
